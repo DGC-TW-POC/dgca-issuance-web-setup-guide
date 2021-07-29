@@ -5,6 +5,49 @@
 - `wget https://github.com/eu-digital-green-certificates/dgca-issuance-web/archive/refs/tags/1.0.8.tar.gz`
 - `tar xzvf  1.0.8.tar.gz`
 
+## 設定nginx
+你可以加入自己要的帳號密碼或是把驗證給關了。
+### htpasswd (加入自己的帳號密碼)
+- 進入`nginx`資料夾
+- 輸入以下指令
+```
+htpasswd -b .htpasswd $username $password
+```
+> $username請輸入你的帳號 
+> $password請輸入你的密碼
+
+### 移除auth (移除網頁登入)
+- 修改`nginx/default.conf/template`
+- 註解掉`auth_basic`以及`auth_basic_user_file`
+```
+server {
+    listen ${SERVER_PORT};
+    server_tokens off;
+    location / {
+        #auth_basic "Secured Site";
+        #auth_basic_user_file /etc/nginx/.htpasswd;
+        root /usr/share/nginx/html;
+        index unresolvable-file-html.html;
+        try_files $uri @index;
+    }
+    location @index {
+        root /usr/share/nginx/html;
+        add_header Cache-Control no-cache;
+        expires 0;
+        try_files /index.html =404;
+    }
+    location /dgca-issuance-service/ {
+        proxy_ssl_server_name on;
+        proxy_pass ${DGCA_ISSUANCE_SERVICE_URL}/;
+    }
+    location /dgca-businessrule-service/ {
+        proxy_ssl_server_name on;
+        proxy_pass ${DGCA_BUSINESSRULE_SERVICE_URL}/;
+    }
+}
+```
+
+
 ## docker-compose.yaml
 於[dgca-issuance-service的docker-compose.yaml](https://github.com/DGC-TW-POC/dgca-issuance-service-setup-guide/blob/main/README.md#docker-compose)加入
 ```
